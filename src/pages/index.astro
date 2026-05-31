@@ -1,0 +1,417 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ContentCard from '../components/ContentCard.astro';
+import NewsletterBlock from '../components/NewsletterBlock.astro';
+import { formatDate, getPublishedNewsletters, getPublishedCollection, resolveIssueNotes } from '../lib/content';
+import { SITE } from '../lib/site';
+
+const interviews = await getPublishedCollection('interviews');
+const fieldNotes = await getPublishedCollection('field-notes');
+const issues = await getCollection('issues');
+const newsletters = await getPublishedNewsletters();
+
+const currentIssue =
+  issues.find((item) => item.data.current) ??
+  issues.sort((a, b) => b.data.publishedAt.getTime() - a.data.publishedAt.getTime())[0];
+
+const currentIssueNotes = currentIssue ? await resolveIssueNotes(currentIssue.data.includedNotes) : [];
+const featuredNewsletter = newsletters.find((entry) => entry.data.featured) ?? newsletters[0];
+---
+
+<BaseLayout title="Home" description={SITE.description}>
+
+  <!-- 세계관 문장 블록: 초대형 타이포 + 애니메이션 -->
+  <div class="world-block" aria-label="편집 세계관">
+    <div class="world-display">
+      <h1 class="world-giant mono" id="worldPhrase" aria-label="the future is nowhere / the future is now here">thefuture<span class="w-is">is</span><span class="w-now">now</span><span class="w-here">here</span></h1>
+    </div>
+    <div class="world-readings">
+      <span class="world-reading-item" id="readingNowhere">→ the future is nowhere</span>
+      <span class="world-reading-item" id="readingNowHere">→ the future is now here</span>
+    </div>
+    <p class="world-tagline">미래는 아직 어디에도 없다.<br />그런데 아직 회사가 되기 전의 AI 창업자들의 손에서는 이미 돌아간다.</p>
+  </div>
+
+  <!-- 현재 호 (Issue) 편집 블록 -->
+  {currentIssue && (
+    <section class="issue-feature" aria-label="현재 호">
+      <div class="issue-feature-main">
+        <div class="issue-number">
+          <span>ISSUE {(currentIssue.data.slug ?? currentIssue.id).replace(/^issue-/i, '')}</span>
+          {currentIssue.data.current && <span class="current-badge">Current</span>}
+          <span class="mono" style="color: var(--faint); font-size: 0.6rem;">{formatDate(currentIssue.data.publishedAt)}</span>
+        </div>
+        <h2>{currentIssue.data.title}</h2>
+        <p style="color: var(--muted); font-size: var(--text-sm); line-height: 1.62; margin: 0;">{currentIssue.data.description}</p>
+        <div class="tag-list" style="margin-top: 0.85rem;">
+          {currentIssue.data.themes.map((theme) => (
+            <span class="tag">{theme}</span>
+          ))}
+        </div>
+      </div>
+
+      <div class="issue-feature-toc">
+        <p class="issue-toc-label mono">이번 호 수록 글</p>
+        {currentIssueNotes.length ? (
+          <ul class="issue-toc-list">
+            {currentIssueNotes.map((note) => (
+              <li>
+                <span class="toc-type">[{note.data.type.toUpperCase().replace('-', ' ')}]</span>
+                <a href={`/${note.collection}/${note.id}`}>
+                  <span class="toc-title">{note.data.title}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p class="mono" style="font-size: var(--text-xs); color: var(--faint);">수록 글 준비중</p>
+        )}
+        <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--line);">
+          <a href="/issues" class="mono" style="font-size: var(--text-xs); color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em;">전체 호 보기 →</a>
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- 인터뷰 섹션: 리드 + 목록 -->
+  {interviews.length > 0 && (
+    <section aria-label="인터뷰">
+      <div class="section-title">
+        <h2>인터뷰</h2>
+        <a class="mono section-link muted" href="/interviews">전체 보기 →</a>
+      </div>
+      <div class="grid-editorial interviews-grid">
+        <div class="interviews-lead">
+          <ContentCard entry={interviews[0]} variant="lead" />
+          {interviews[1] && <ContentCard entry={interviews[1]} variant="lead" />}
+        </div>
+        <div class="interviews-list">
+          {interviews.slice(2, 5).map((entry) => (
+            <ContentCard entry={entry} variant="compact" />
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- 현장 노트 섹션: 목록형 -->
+  {fieldNotes.length > 0 && (
+    <section aria-label="현장 노트">
+      <div class="section-title">
+        <h2>현장 노트</h2>
+        <a class="mono section-link muted" href="/field-notes">전체 보기 →</a>
+      </div>
+      <div class="field-notes-list">
+        {fieldNotes.slice(0, 4).map((entry) => (
+          <ContentCard entry={entry} variant="compact" />
+        ))}
+      </div>
+    </section>
+  )}
+
+  <!-- 뉴스레터 CTA -->
+  <section class="newsletter-section" id="newsletter" aria-label="뉴스레터">
+    <div class="section-title">
+      <h2>Newsletter</h2>
+    </div>
+    <div class="newsletter-inner">
+      <div class="newsletter-copy">
+        <h3 class="newsletter-headline">월간 노트</h3>
+        <p class="muted">피치덱에 오르기 전의 사람, 도구, 작업 방식 — 매달 정리해 보냅니다.</p>
+        {featuredNewsletter && (
+          <a class="mono newsletter-archive-link" href={`/newsletter/${featuredNewsletter.id}`}>
+            최근 발행: {featuredNewsletter.data.title} →
+          </a>
+        )}
+        <a class="mono newsletter-archive-link" href="/newsletter">아카이브 보기 →</a>
+      </div>
+      <div class="newsletter-form-wrap">
+        <NewsletterBlock />
+      </div>
+    </div>
+  </section>
+
+</BaseLayout>
+
+<script>
+  const phrase = document.getElementById('worldPhrase');
+  const rNowhere = document.getElementById('readingNowhere');
+  const rNowHere = document.getElementById('readingNowHere');
+
+  if (phrase && rNowhere && rNowHere) {
+    const phraseEl = phrase;
+    const rNowhereEl = rNowhere;
+    const rNowHereEl = rNowHere;
+    let stateA = true;
+
+    function applyState() {
+      if (stateA) {
+        phraseEl.classList.add('state-a');
+        phraseEl.classList.remove('state-b');
+        rNowhereEl.classList.add('reading-active');
+        rNowhereEl.classList.remove('reading-dim');
+        rNowHereEl.classList.remove('reading-active');
+        rNowHereEl.classList.add('reading-dim');
+      } else {
+        phraseEl.classList.add('state-b');
+        phraseEl.classList.remove('state-a');
+        rNowhereEl.classList.remove('reading-active');
+        rNowhereEl.classList.add('reading-dim');
+        rNowHereEl.classList.add('reading-active');
+        rNowHereEl.classList.remove('reading-dim');
+      }
+    }
+
+    applyState();
+    setInterval(() => {
+      stateA = !stateA;
+      applyState();
+    }, 2600);
+  }
+</script>
+
+<style>
+  /* ── 세계관 블록: 초대형 타이포 ─────────── */
+  .world-block {
+    padding: 1.2rem 0 0.9rem;
+    border-top: 2px solid var(--accent);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .world-display {
+    line-height: 1;
+    margin-bottom: 0.7rem;
+  }
+
+  .world-giant {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: clamp(1rem, 6vw, 7rem);
+    font-weight: 400;
+    letter-spacing: -0.03em;
+    line-height: 0.95;
+    color: var(--text);
+    white-space: nowrap;
+  }
+
+  /* 세계관 애니메이션 스팬 */
+  .w-is,
+  .w-now {
+    display: inline;
+    padding: 0 0.05em;
+    transition: background-color 0.55s ease, color 0.55s ease;
+  }
+
+  /* w-here: padding-left로 공백 등장/소멸 */
+  .w-here {
+    display: inline;
+    padding: 0 0.05em;
+    transition:
+      background-color 0.55s ease,
+      color 0.55s ease,
+      padding-left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* state-a: "nowhere" — 붙어있음 */
+  #worldPhrase.state-a .w-is { background: none; color: var(--text); }
+  #worldPhrase.state-a .w-now { background: var(--accent); color: var(--accent-text); }
+  #worldPhrase.state-a .w-here { background: var(--accent); color: var(--accent-text); padding-left: 0.05em; }
+
+  /* state-b: "now here" — 공백 생김 */
+  #worldPhrase.state-b .w-is { background: var(--accent); color: var(--accent-text); }
+  #worldPhrase.state-b .w-now { background: var(--accent); color: var(--accent-text); }
+  #worldPhrase.state-b .w-here { background: var(--accent); color: var(--accent-text); padding-left: 0.52em; }
+
+  /* 리딩 텍스트 트랜지션 */
+  .world-reading-item {
+    transition: opacity 0.55s ease, color 0.55s ease;
+  }
+
+  .world-reading-item.reading-active {
+    opacity: 1;
+    color: var(--text);
+  }
+
+  .world-reading-item.reading-dim {
+    opacity: 0.28;
+    color: var(--faint);
+  }
+
+  .world-block .world-readings {
+    display: flex;
+    gap: 1.5rem;
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    color: var(--faint);
+    letter-spacing: 0.06em;
+    flex-wrap: wrap;
+  }
+
+  .world-tagline {
+    margin: 0.9rem 0 0;
+    font-size: clamp(1rem, 1.8vw, 1.25rem);
+    line-height: 1.65;
+    color: var(--muted);
+    max-width: 42ch;
+  }
+
+  /* ── 인터뷰 그리드 ─────────────────────── */
+  .interviews-grid {
+    border-top: 1px solid var(--line-strong);
+    align-items: flex-start;
+  }
+
+  .interviews-lead {
+    padding-right: 1.2rem;
+    display: grid;
+    gap: 0;
+    border-right: 1px solid var(--line);
+  }
+
+  .interviews-list {
+    padding-left: 1.1rem;
+    border-top: none;
+  }
+
+  /* compact 엔트리 위에 border-top이 있으므로 첫 번째는 없앰 */
+  .interviews-list .editorial-entry:first-child {
+    border-top: none;
+    padding-top: 0;
+  }
+
+  /* ── 현장 노트 목록 ──────────────────── */
+  .field-notes-list .editorial-entry:first-child {
+    border-top: none;
+    padding-top: 0;
+  }
+
+  /* ── 리서치 헤더 ─────────────────────── */
+  .research-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: var(--text-2xs);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    margin-bottom: 0.6rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--line-strong);
+  }
+
+  .research-more {
+    font-size: 0.62rem;
+    color: var(--faint);
+    letter-spacing: 0.08em;
+    text-decoration: none;
+  }
+
+  .research-more:hover {
+    color: var(--text);
+  }
+
+  /* ── section link ──────────────────── */
+  .section-link {
+    font-size: var(--text-xs);
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    text-decoration: none;
+  }
+
+  .section-link:hover {
+    color: var(--text);
+  }
+
+  /* ── 뉴스레터 섹션 ─────────────────── */
+  .newsletter-section {
+    margin-top: 0.5rem;
+  }
+
+  .newsletter-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    gap: 0;
+    border: 1px solid var(--line);
+    background: var(--surface);
+  }
+
+  .newsletter-copy {
+    padding: 1.2rem 1.2rem 1.2rem;
+    border-right: 1px solid var(--line);
+    display: grid;
+    gap: 0.5rem;
+    align-content: start;
+  }
+
+  .newsletter-headline {
+    margin: 0;
+    font-size: 1.5rem;
+    line-height: 1.2;
+    letter-spacing: -0.025em;
+  }
+
+  .newsletter-archive-link {
+    font-size: var(--text-xs);
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    text-decoration: none;
+    display: block;
+  }
+
+  .newsletter-archive-link:hover {
+    color: var(--text);
+  }
+
+  .newsletter-form-wrap {
+    padding: 0;
+  }
+
+  /* NewsletterBlock 내부 frame 스타일을 오버라이드 */
+  .newsletter-form-wrap :global(.newsletter) {
+    border: none;
+    background: transparent;
+  }
+
+  /* ── 반응형 ──────────────────────────── */
+  @media (max-width: 1024px) {
+    .interviews-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .interviews-lead {
+      padding-right: 0;
+      border-right: none;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 0.85rem;
+    }
+
+    .interviews-list {
+      padding-left: 0;
+      padding-top: 0;
+    }
+
+    .interviews-list .editorial-entry:first-child {
+      padding-top: 0.72rem;
+      border-top: 1px solid var(--line);
+    }
+  }
+
+  @media (max-width: 900px) {
+    .newsletter-inner {
+      grid-template-columns: 1fr;
+    }
+
+    .newsletter-copy {
+      border-right: none;
+      border-bottom: 1px solid var(--line);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .world-block .world-readings {
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+  }
+</style>
