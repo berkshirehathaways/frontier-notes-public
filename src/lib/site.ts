@@ -41,7 +41,6 @@ export const SIGNAL_OPTIONS = [
 ] as const;
 
 export const STAGE_OPTIONS = [
-  'pre-company',
   'project',
   'startup',
   'operator',
