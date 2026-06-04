@@ -30,7 +30,7 @@ const featuredNewsletter = newsletters.find((entry) => entry.data.featured) ?? n
       <span class="world-reading-item" id="readingNowhere">→ the future is nowhere</span>
       <span class="world-reading-item" id="readingNowHere">→ the future is now here</span>
     </div>
-    <p class="world-tagline">미래는 아직 어디에도 없다.<br />그런데 아직 회사가 되기 전의 AI 창업자들의 손에서는 이미 돌아간다.</p>
+    <p class="world-tagline">미래는 아직 어디에도 없다.<br />그런데 AI 네이티브 창업가와 빌더의 손에서는 이미 돌아간다.</p>
   </div>
 
   <!-- 현재 호 (Issue) 편집 블록 -->
@@ -118,7 +118,7 @@ const featuredNewsletter = newsletters.find((entry) => entry.data.featured) ?? n
     <div class="newsletter-inner">
       <div class="newsletter-copy">
         <h3 class="newsletter-headline">월간 노트</h3>
-        <p class="muted">피치덱에 오르기 전의 사람, 도구, 작업 방식 — 매달 정리해 보냅니다.</p>
+        <p class="muted">문제의식, 도구, 런타임, 작업 방식 — 매달 정리해 보냅니다.</p>
         {featuredNewsletter && (
           <a class="mono newsletter-archive-link" href={`/newsletter/${featuredNewsletter.id}`}>
             최근 발행: {featuredNewsletter.data.title} →
@@ -253,7 +253,7 @@ const featuredNewsletter = newsletters.find((entry) => entry.data.featured) ?? n
     font-size: clamp(1rem, 1.8vw, 1.25rem);
     line-height: 1.65;
     color: var(--muted);
-    max-width: 42ch;
+    max-width: 58ch;
   }
 
   /* ── 인터뷰 그리드 ─────────────────────── */
